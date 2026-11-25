@@ -1,0 +1,1582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LLM Pipeline Explorer</title>
+  <!-- WHAT THIS DOES: Loads the Plotly 3D charting library from CDN to draw interactive 3D scatter plots -->
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+  <style>
+    /* WHAT THIS DOES: Global reset and Naruto Shinobi-inspired typography */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      background: 
+        radial-gradient(circle at 12% 12%, rgba(255, 107, 0, 0.18) 0%, transparent 45%),
+        radial-gradient(circle at 88% 18%, rgba(6, 182, 212, 0.16) 0%, transparent 45%),
+        radial-gradient(circle at 50% 85%, rgba(234, 88, 12, 0.15) 0%, transparent 55%),
+        #0b0f19;
+      color: #f8fafc;
+      display: flex;
+      justify-content: center;
+      padding: 56px 20px 100px 20px;
+      min-height: 100vh;
+      position: relative;
+    }
+
+    /* WHAT THIS DOES: Smooth page entrance animation with chakra burst */
+    .page-wrapper {
+      width: 100%;
+      max-width: 1000px;
+      animation: shinobiEntrance 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    @keyframes shinobiEntrance {
+      from {
+        opacity: 0;
+        transform: translateY(24px) scale(0.98);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    /* WHAT THIS DOES: Naruto hero header with Uzumaki spiral badge and fiery chakra gradient */
+    .page-header {
+      text-align: left;
+      margin-bottom: 36px;
+    }
+
+    .header-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #ffedd5;
+      background: linear-gradient(135deg, rgba(255, 107, 0, 0.25) 0%, rgba(234, 88, 12, 0.15) 100%);
+      border: 1px solid rgba(255, 122, 0, 0.5);
+      padding: 6px 16px;
+      border-radius: 999px;
+      margin-bottom: 16px;
+      box-shadow: 0 0 15px rgba(255, 107, 0, 0.25);
+    }
+
+    .badge-pulse {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: #ff7a00;
+      box-shadow: 0 0 0 0 rgba(255, 122, 0, 0.8);
+      animation: chakraPulse 1.8s infinite;
+    }
+
+    @keyframes chakraPulse {
+      0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(255, 122, 0, 0.8);
+      }
+      70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 8px rgba(255, 122, 0, 0);
+      }
+      100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(255, 122, 0, 0);
+      }
+    }
+
+    .page-title {
+      font-size: 42px;
+      font-weight: 850;
+      letter-spacing: -0.035em;
+      background: linear-gradient(135deg, #ffffff 0%, #ffedd5 30%, #ff7a00 75%, #ea580c 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 10px;
+      line-height: 1.15;
+      text-shadow: 0 0 35px rgba(255, 107, 0, 0.35);
+    }
+
+    .page-subtitle {
+      font-size: 17px;
+      color: #94a3b8;
+      letter-spacing: -0.01em;
+      line-height: 1.5;
+      max-width: 660px;
+    }
+
+    /* WHAT THIS DOES: Dark frosted shinobi scroll card with glowing chakra border */
+    .card {
+      background: rgba(15, 23, 42, 0.88);
+      backdrop-filter: blur(24px) saturate(190%);
+      -webkit-backdrop-filter: blur(24px) saturate(190%);
+      border: 1px solid rgba(255, 122, 0, 0.25);
+      border-radius: 22px;
+      padding: 36px;
+      margin-bottom: 36px;
+      box-shadow: 
+        0 20px 50px -15px rgba(0, 0, 0, 0.6),
+        0 0 25px -5px rgba(255, 107, 0, 0.12),
+        inset 0 1px 1px 0 rgba(255, 255, 255, 0.08);
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s;
+      position: relative;
+    }
+
+    .card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(255, 122, 0, 0.45);
+      box-shadow: 
+        0 28px 60px -15px rgba(0, 0, 0, 0.7),
+        0 0 35px -5px rgba(255, 107, 0, 0.22);
+    }
+
+    /* WHAT THIS DOES: Styled step badge in card header */
+    .card-top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid rgba(255, 122, 0, 0.2);
+    }
+
+    .step-indicator {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .step-num {
+      font-size: 12px;
+      font-weight: 850;
+      letter-spacing: 0.05em;
+      color: #ffffff;
+      background: linear-gradient(135deg, #ff7a00, #ea580c);
+      padding: 4px 10px;
+      border-radius: 8px;
+      box-shadow: 0 0 12px rgba(255, 107, 0, 0.5);
+    }
+
+    .step-num-rasengan {
+      background: linear-gradient(135deg, #06b6d4, #2563eb);
+      box-shadow: 0 0 12px rgba(6, 182, 212, 0.5);
+    }
+
+    .card-title {
+      font-size: 24px;
+      font-weight: 750;
+      letter-spacing: -0.025em;
+      color: #f8fafc;
+    }
+
+    .card-tag {
+      font-size: 12px;
+      font-weight: 650;
+      color: #fed7aa;
+      background: rgba(255, 107, 0, 0.12);
+      border: 1px solid rgba(255, 122, 0, 0.35);
+      padding: 4px 14px;
+      border-radius: 999px;
+    }
+
+    .field-label {
+      display: block;
+      font-size: 14px;
+      font-weight: 650;
+      color: #fed7aa;
+      margin-bottom: 10px;
+      letter-spacing: -0.01em;
+    }
+
+    /* WHAT THIS DOES: Ninja dark-mode textareas and text inputs with burning chakra focus ring */
+    textarea, input[type="text"] {
+      width: 100%;
+      border: 1px solid rgba(255, 122, 0, 0.25);
+      border-radius: 12px;
+      padding: 14px 16px;
+      font-size: 14.5px;
+      line-height: 1.6;
+      color: #f8fafc;
+      background-color: rgba(10, 15, 26, 0.85);
+      outline: none;
+      resize: vertical;
+      transition: all 0.2s ease;
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.4);
+    }
+
+    textarea:focus, input[type="text"]:focus {
+      border-color: #ff7a00;
+      box-shadow: 0 0 0 4px rgba(255, 122, 0, 0.25), inset 0 2px 4px rgba(0, 0, 0, 0.4);
+      background-color: rgba(15, 23, 42, 0.95);
+    }
+
+    .input-spacing {
+      margin-bottom: 18px;
+    }
+
+    /* WHAT THIS DOES: Fiery Kurama / Nine-Tails Chakra action button */
+    .primary-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: linear-gradient(135deg, #ff7a00 0%, #ea580c 50%, #dc2626 100%);
+      color: #ffffff;
+      font-size: 14.5px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      padding: 11px 24px;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      margin-bottom: 24px;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 4px 18px rgba(255, 107, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    }
+
+    .primary-btn:hover {
+      background: linear-gradient(135deg, #ff8c1a 0%, #f97316 50%, #ea580c 100%);
+      transform: translateY(-2px) scale(1.02);
+      box-shadow: 0 8px 28px rgba(255, 107, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    }
+
+    .primary-btn:active {
+      transform: scale(0.97);
+      box-shadow: 0 2px 8px rgba(255, 107, 0, 0.35);
+    }
+
+    .primary-btn:disabled {
+      background: #475569;
+      box-shadow: none;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* WHAT THIS DOES: Jutsu spring pop-up animation for newly revealed sections */
+    @keyframes popUpEntrance {
+      0% {
+        opacity: 0;
+        transform: scale(0.94) translateY(12px);
+      }
+      70% {
+        transform: scale(1.02) translateY(-2px);
+      }
+      100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
+    }
+
+    .animated-popup {
+      animation: popUpEntrance 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    /* WHAT THIS DOES: Styles vocabulary container and slider section */
+    .vocab-container {
+      margin-top: 6px;
+      margin-bottom: 28px;
+      border: 1px solid rgba(255, 122, 0, 0.3);
+      border-radius: 16px;
+      background: linear-gradient(180deg, rgba(20, 27, 45, 0.9) 0%, rgba(15, 23, 42, 0.7) 100%);
+      padding: 24px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    }
+
+    .vocab-summary {
+      font-size: 14.5px;
+      font-weight: 650;
+      color: #fed7aa;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .vocab-slider-section {
+      background: rgba(10, 15, 26, 0.9);
+      border: 1px solid rgba(255, 122, 0, 0.3);
+      border-radius: 14px;
+      padding: 16px 20px;
+      margin-bottom: 18px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    }
+
+    .slider-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      font-size: 14px;
+      font-weight: 650;
+      color: #f8fafc;
+    }
+
+    .vocab-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 8px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #ff7a00, #dc2626);
+      outline: none;
+      cursor: pointer;
+    }
+
+    .vocab-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #ffffff;
+      border: 3.5px solid #ff7a00;
+      box-shadow: 0 0 14px rgba(255, 122, 0, 0.8);
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+
+    .vocab-slider::-webkit-slider-thumb:hover {
+      transform: scale(1.25);
+      box-shadow: 0 0 20px rgba(255, 122, 0, 1);
+    }
+
+    .vocab-table-scroll {
+      max-height: 260px;
+      overflow-y: auto;
+      border: 1px solid rgba(255, 122, 0, 0.25);
+      border-radius: 14px;
+      background: rgba(10, 15, 26, 0.95);
+      box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.5);
+    }
+
+    .vocab-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13.5px;
+      text-align: left;
+    }
+
+    .vocab-table th {
+      background-color: rgba(20, 27, 45, 0.95);
+      color: #fdba74;
+      font-weight: 700;
+      padding: 12px 18px;
+      border-bottom: 1px solid rgba(255, 122, 0, 0.25);
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      text-transform: uppercase;
+      font-size: 11px;
+      letter-spacing: 0.08em;
+    }
+
+    .vocab-table td {
+      padding: 11px 18px;
+      border-bottom: 1px solid rgba(255, 122, 0, 0.12);
+      color: #f1f5f9;
+    }
+
+    .vocab-table tr:hover {
+      background-color: rgba(255, 107, 0, 0.08);
+    }
+
+    .token-badge {
+      display: inline-block;
+      background-color: rgba(255, 107, 0, 0.15);
+      color: #ffedd5;
+      border: 1px solid rgba(255, 122, 0, 0.4);
+      border-radius: 6px;
+      padding: 3px 10px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 13px;
+      font-weight: 600;
+      text-shadow: 0 0 8px rgba(255, 107, 0, 0.3);
+    }
+
+    .token-special {
+      background-color: rgba(239, 68, 68, 0.2);
+      color: #fca5a5;
+      border-color: rgba(239, 68, 68, 0.5);
+    }
+
+    /* WHAT THIS DOES: Tokenize output box with Chakra metric cards */
+    .tokenize-output-container {
+      margin-top: 10px;
+      margin-bottom: 24px;
+      border: 1px solid rgba(255, 122, 0, 0.3);
+      border-radius: 18px;
+      background: rgba(15, 23, 42, 0.95);
+      padding: 24px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+    }
+
+    .stats-bar {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin-bottom: 20px;
+      padding-bottom: 18px;
+      border-bottom: 1px solid rgba(255, 122, 0, 0.2);
+    }
+
+    .stat-card {
+      background: rgba(10, 15, 26, 0.9);
+      border: 1px solid rgba(255, 122, 0, 0.25);
+      border-radius: 12px;
+      padding: 12px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-2px);
+      border-color: #ff7a00;
+    }
+
+    .stat-card-label {
+      font-size: 11.5px;
+      font-weight: 700;
+      color: #fdba74;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .stat-card-value {
+      font-size: 22px;
+      font-weight: 800;
+      color: #ffffff;
+      text-shadow: 0 0 10px rgba(255, 122, 0, 0.4);
+    }
+
+    .subword-note {
+      font-size: 13.5px;
+      color: #fed7aa;
+      background: linear-gradient(135deg, rgba(255, 107, 0, 0.15) 0%, rgba(220, 38, 38, 0.15) 100%);
+      border: 1px solid rgba(255, 122, 0, 0.45);
+      border-radius: 12px;
+      padding: 12px 18px;
+      margin-bottom: 20px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 0 15px rgba(255, 107, 0, 0.15);
+    }
+
+    .chips-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+    }
+
+    /* WHAT THIS DOES: Ninja talisman scroll token chips with spring physics and chakra aura */
+    @keyframes chipSpringIn {
+      0% {
+        opacity: 0;
+        transform: scale(0.4) translateY(18px);
+      }
+      70% {
+        transform: scale(1.1) translateY(-4px);
+      }
+      100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
+    }
+
+    .token-chip {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 16px;
+      border-radius: 12px;
+      border: 1.5px solid transparent;
+      min-width: 58px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+      animation: chipSpringIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      cursor: default;
+    }
+
+    .token-chip:hover {
+      transform: translateY(-5px) scale(1.1);
+      box-shadow: 0 12px 28px rgba(255, 107, 0, 0.3), 0 0 15px rgba(255, 107, 0, 0.5);
+    }
+
+    .chip-word {
+      font-size: 14.5px;
+      font-weight: 750;
+      line-height: 1.2;
+    }
+
+    .chip-id {
+      font-size: 11px;
+      font-weight: 700;
+      opacity: 0.9;
+      margin-top: 4px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+
+    /* WHAT THIS DOES: Shinobi Jutsu radio pills */
+    .radio-group {
+      display: flex;
+      gap: 14px;
+      align-items: center;
+      margin: 18px 0 22px 0;
+    }
+
+    .radio-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      font-weight: 650;
+      color: #f1f5f9;
+      background: rgba(10, 15, 26, 0.85);
+      border: 1px solid rgba(255, 122, 0, 0.3);
+      padding: 8px 16px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .radio-label:hover {
+      border-color: #ff7a00;
+      background: rgba(255, 107, 0, 0.12);
+    }
+
+    .radio-label input[type="radio"] {
+      accent-color: #ff7a00;
+      width: 16px;
+      height: 16px;
+      cursor: pointer;
+    }
+
+    /* WHAT THIS DOES: Notification banner for progress or fallback */
+    .status-banner {
+      font-size: 13.5px;
+      font-weight: 600;
+      border-radius: 12px;
+      padding: 14px 20px;
+      margin-bottom: 20px;
+      display: none;
+    }
+
+    .status-info {
+      background-color: rgba(6, 182, 212, 0.15);
+      border: 1px solid rgba(6, 182, 212, 0.45);
+      color: #67e8f9;
+      box-shadow: 0 0 15px rgba(6, 182, 212, 0.2);
+    }
+
+    .status-warning {
+      background-color: rgba(245, 158, 11, 0.15);
+      border: 1px solid rgba(245, 158, 11, 0.45);
+      color: #fde047;
+      box-shadow: 0 0 15px rgba(245, 158, 11, 0.2);
+    }
+
+    /* WHAT THIS DOES: 520px 3D Rasengan Realm chart area with dark borders */
+    .chart-area {
+      height: 520px;
+      width: 100%;
+      border: 1px solid rgba(255, 122, 0, 0.35);
+      background: linear-gradient(180deg, #090d16 0%, #0d121f 100%);
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #94a3b8;
+      font-size: 14.5px;
+      margin-top: 18px;
+      margin-bottom: 34px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.6), 0 0 20px rgba(255, 107, 0, 0.1);
+    }
+
+    .chart-empty-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      text-align: center;
+      padding: 20px;
+    }
+
+    .chart-empty-icon {
+      font-size: 42px;
+      animation: floatBob 3s ease-in-out infinite;
+      filter: drop-shadow(0 0 12px rgba(6, 182, 212, 0.7));
+    }
+
+    @keyframes floatBob {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+
+    .chart-warning {
+      color: #fca5a5;
+      background-color: rgba(220, 38, 38, 0.2);
+      border: 1px solid rgba(239, 68, 68, 0.5);
+      border-radius: 12px;
+      padding: 16px 22px;
+      font-size: 14.5px;
+      font-weight: 600;
+    }
+
+    /* WHAT THIS DOES: Closest Pairs section as Shinobi Leaderboard */
+    .pairs-section {
+      margin-top: 32px;
+      margin-bottom: 38px;
+    }
+
+    .section-subtitle {
+      font-size: 19px;
+      font-weight: 750;
+      letter-spacing: -0.02em;
+      color: #f8fafc;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .pairs-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      border: 1px solid rgba(255, 122, 0, 0.25);
+      border-radius: 14px;
+      overflow: hidden;
+      background: rgba(10, 15, 26, 0.95);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    }
+
+    .pairs-table th {
+      background-color: rgba(20, 27, 45, 0.95);
+      color: #fdba74;
+      font-weight: 700;
+      padding: 13px 20px;
+      border-bottom: 1px solid rgba(255, 122, 0, 0.25);
+      text-align: left;
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .pairs-table td {
+      padding: 13px 20px;
+      border-bottom: 1px solid rgba(255, 122, 0, 0.1);
+      color: #f1f5f9;
+    }
+
+    .pairs-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .pairs-table tr:hover {
+      background-color: rgba(255, 107, 0, 0.08);
+    }
+
+    .similarity-score {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-weight: 700;
+      color: #67e8f9;
+      background: rgba(6, 182, 212, 0.15);
+      border: 1px solid rgba(6, 182, 212, 0.4);
+      padding: 4px 12px;
+      border-radius: 8px;
+      display: inline-block;
+      text-shadow: 0 0 8px rgba(6, 182, 212, 0.5);
+    }
+
+    /* WHAT THIS DOES: Custom Sentence Jutsu Forge Studio */
+    .custom-input-section {
+      border-top: 1px solid rgba(255, 122, 0, 0.25);
+      padding-top: 32px;
+    }
+
+    .custom-input-title {
+      font-size: 19px;
+      font-weight: 750;
+      letter-spacing: -0.02em;
+      color: #f8fafc;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .custom-results-box {
+      margin-top: 24px;
+      border: 1px solid rgba(255, 122, 0, 0.35);
+      border-radius: 18px;
+      background: linear-gradient(180deg, rgba(20, 27, 45, 0.95) 0%, rgba(10, 15, 26, 0.95) 100%);
+      padding: 26px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+    }
+
+    .custom-result-heading {
+      font-size: 14px;
+      font-weight: 750;
+      color: #fed7aa;
+      margin-bottom: 10px;
+    }
+
+    .vector-preview {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 12.5px;
+      color: #f8fafc;
+      background: rgba(10, 15, 26, 0.9);
+      border: 1px solid rgba(255, 122, 0, 0.3);
+      border-radius: 10px;
+      padding: 12px 16px;
+      margin-top: 8px;
+      margin-bottom: 22px;
+      overflow-x: auto;
+      white-space: nowrap;
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5);
+    }
+
+    .closest-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .closest-list-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(10, 15, 26, 0.9);
+      border: 1px solid rgba(255, 122, 0, 0.25);
+      border-radius: 12px;
+      padding: 12px 18px;
+      margin-bottom: 10px;
+      font-size: 14px;
+      color: #f1f5f9;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .closest-list-item:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(255, 107, 0, 0.2);
+      border-color: #ff7a00;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="page-wrapper">
+    <!-- Header with Naruto Uzumaki badge -->
+    <header class="page-header">
+      <div class="header-badge">
+        <span class="badge-pulse"></span>
+        <span>🍥 Hidden Leaf NLP Jutsu • Uzumaki Archive</span>
+      </div>
+      <h1 class="page-title">LLM Pipeline Explorer</h1>
+      <p class="page-subtitle">How shinobi words transform into chakra tokens, embedding vectors, and living points in 3D Rasengan space.</p>
+    </header>
+
+    <!-- Part 1: Tokenizer Card -->
+    <section class="card">
+      <div class="card-top-bar">
+        <div class="step-indicator">
+          <span class="step-num">01</span>
+          <h2 class="card-title">1. Tokenizer</h2>
+        </div>
+        <div class="card-tag">Chakra Hand-Sign BPE</div>
+      </div>
+
+      <!-- Training Sentences -->
+      <label class="field-label" for="trainingSentences">Sentences to learn words from</label>
+      <div class="input-spacing">
+        <textarea id="trainingSentences" rows="7">The cat sat on the mat.
+The dog sat on the rug.
+The cat saw the dog!
+A dog and a cat can be friends.
+Do you like the cat?
+I don't like the rain, but I like the sun.</textarea>
+      </div>
+      <button type="button" class="primary-btn" id="buildVocabBtn">
+        <span>⚡</span> Build vocabulary
+      </button>
+
+      <!-- Vocabulary Output Area (Slider + Table + Size) -->
+      <div id="vocabContainer" class="vocab-container animated-popup" style="display: none;">
+        <div class="vocab-slider-section">
+          <div class="slider-header">
+            <span>Words kept: <strong id="wordsKeptLabel" style="color: #ff7a00;">0 of 0</strong></span>
+          </div>
+          <input type="range" id="vocabSlider" class="vocab-slider" min="1" max="1" value="1">
+        </div>
+
+        <div id="vocabSummary" class="vocab-summary"></div>
+        <div class="vocab-table-scroll">
+          <table class="vocab-table">
+            <thead>
+              <tr>
+                <th style="width: 80px;">ID</th>
+                <th>token</th>
+                <th style="width: 100px;">count</th>
+              </tr>
+            </thead>
+            <tbody id="vocabTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Encode Sentence -->
+      <label class="field-label" for="encodeSentence">Encode a sentence</label>
+      <div class="input-spacing">
+        <textarea id="encodeSentence" rows="2">The dogs liked the sunny zebra.</textarea>
+      </div>
+      <button type="button" class="primary-btn" id="tokenizeBtn">
+        <span>🌀</span> Tokenize
+      </button>
+
+      <!-- Tokenize Output Area (Chips + Stats + Note) -->
+      <div id="tokenizeContainer" class="tokenize-output-container animated-popup" style="display: none;">
+        <div class="stats-bar">
+          <div class="stat-card">
+            <span class="stat-card-label">Characters (Glyphs)</span>
+            <span class="stat-card-value" id="statCharCount">0</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-card-label">Tokens (Hand Signs)</span>
+            <span class="stat-card-value" id="statTokenCount">0</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-card-label">Chakra Density (c/t)</span>
+            <span class="stat-card-value" id="statCharsPerToken">0</span>
+          </div>
+        </div>
+
+        <div id="subwordNote" class="subword-note animated-popup" style="display: none;">
+          <span>⚠️</span> unknown words are broken into smaller pieces
+        </div>
+
+        <div id="chipsArea" class="chips-container"></div>
+      </div>
+    </section>
+
+    <!-- Part 2: Embeddings in 3D Card -->
+    <section class="card">
+      <div class="card-top-bar">
+        <div class="step-indicator">
+          <span class="step-num step-num-rasengan">02</span>
+          <h2 class="card-title">2. Embeddings in 3D</h2>
+        </div>
+        <div class="card-tag">Rasengan Vector Space</div>
+      </div>
+
+      <!-- Sentences for Embeddings -->
+      <label class="field-label" for="embeddingSentences">Sentences (one per line)</label>
+      <div class="input-spacing">
+        <textarea id="embeddingSentences" rows="9">The cat sat on the mat.
+A kitten rested on the rug.
+The bat sat on the mat.
+I love programming in Python.
+Coding in Python is my passion.
+Pythons are large snakes.
+The stock market crashed today.
+Share prices fell sharply.</textarea>
+      </div>
+
+      <!-- Embedding Mode Options -->
+      <div class="radio-group">
+        <label class="radio-label">
+          <input type="radio" name="embeddingMode" value="spelling" checked>
+          Spelling-based (Taijutsu)
+        </label>
+        <label class="radio-label">
+          <input type="radio" name="embeddingMode" value="meaning">
+          Meaning-based (Senjutsu / Sage Mode)
+        </label>
+      </div>
+
+      <!-- Status / Download Progress / Fallback Notification Banner -->
+      <div id="statusBanner" class="status-banner animated-popup"></div>
+
+      <button type="button" class="primary-btn" id="embedPlotBtn">
+        <span>🔮</span> Embed and plot
+      </button>
+
+      <!-- 520px Tall Chart Area -->
+      <div id="chartArea" class="chart-area">
+        <div class="chart-empty-box">
+          <div class="chart-empty-icon">🌀</div>
+          <div style="font-weight: 750; color: #ffedd5; font-size: 16px;">3D Rasengan Realm Ready</div>
+          <div style="font-size: 13.5px; color: #94a3b8;">Click <strong>Embed and plot</strong> above to project sentence chakra vectors into 3D</div>
+        </div>
+      </div>
+
+      <!-- Closest Pairs Table Section -->
+      <div id="pairsSection" class="pairs-section animated-popup" style="display: none;">
+        <h3 class="section-subtitle">
+          <span>🎯</span> Closest pairs (Chakra Resonance)
+        </h3>
+        <table class="pairs-table">
+          <thead>
+            <tr>
+              <th style="width: 50px;">#</th>
+              <th>Sentence 1</th>
+              <th>Sentence 2</th>
+              <th style="width: 120px;">Similarity</th>
+            </tr>
+          </thead>
+          <tbody id="pairsTableBody"></tbody>
+        </table>
+      </div>
+
+      <!-- Try Your Own Word or Sentence Section (Stage 7) -->
+      <div class="custom-input-section">
+        <h3 class="custom-input-title">
+          <span>🦊</span> Try your own word or sentence (Secret Jutsu Forge)
+        </h3>
+        <div class="input-spacing">
+          <input type="text" id="customSentenceInput" placeholder="e.g. puppy, or: Dattebayo! A ninja never goes back on their word.">
+        </div>
+        <button type="button" class="primary-btn" id="customTokenizeBtn">
+          <span>🔥</span> Tokenize, embed &amp; add to plot
+        </button>
+
+        <!-- Stage 7 Results Area -->
+        <div id="customResultArea" class="custom-results-box animated-popup" style="display: none;">
+          <div class="custom-result-heading">Token chips:</div>
+          <div id="customChipsArea" class="chips-container" style="margin-bottom: 16px;"></div>
+
+          <div class="custom-result-heading">Vector (first 8 dimensions):</div>
+          <div id="customVectorPreview" class="vector-preview"></div>
+
+          <div class="custom-result-heading">3 closest sentences:</div>
+          <ul id="customClosestList" class="closest-list"></ul>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    // WHAT THIS DOES: Stores the active vocabulary dictionary in memory
+    let vocabulary = {};
+
+    // WHAT THIS DOES: Stores all sorted unique words learned from the training sentences and their frequency counts
+    let allLearnedWords = [];
+    let learnedWordCounts = {};
+
+    // WHAT THIS DOES: Tracks whether the sentence in part 1 has been tokenized at least once
+    let hasTokenizedSentence = false;
+
+    // WHAT THIS DOES: Holds the cached Transformers.js model pipeline instance
+    let meaningPipeline = null;
+
+    // WHAT THIS DOES: Stores the latest plotted sentences and their vectors in memory for reuse
+    let currentPlottedSentences = [];
+    let currentPlottedVectors = [];
+
+    // WHAT THIS DOES: Rebuilds the active vocabulary keeping only the top N most frequent words from the slider
+    function updateVocabularyForTopN(n) {
+      vocabulary = {};
+      const vocabList = [];
+
+      vocabulary["[UNK]"] = { id: 0, count: 0 };
+      vocabList.push({ id: 0, token: "[UNK]", count: "-" });
+
+      const wordsToKeep = allLearnedWords.slice(0, n);
+
+      wordsToKeep.forEach((word, index) => {
+        const id = index + 1;
+        vocabulary[word] = { id: id, count: learnedWordCounts[word] };
+        vocabList.push({ id: id, token: word, count: learnedWordCounts[word] });
+      });
+
+      document.getElementById("wordsKeptLabel").textContent = `${n} of ${allLearnedWords.length}`;
+      document.getElementById("vocabSummary").textContent = `Vocabulary size: ${vocabList.length} tokens (including [UNK])`;
+
+      const vocabTableBody = document.getElementById("vocabTableBody");
+      vocabTableBody.innerHTML = "";
+
+      vocabList.forEach(item => {
+        const row = document.createElement("tr");
+
+        const idCell = document.createElement("td");
+        idCell.textContent = item.id;
+
+        const tokenCell = document.createElement("td");
+        const tokenBadge = document.createElement("span");
+        tokenBadge.className = item.id === 0 ? "token-badge token-special" : "token-badge";
+        tokenBadge.textContent = item.token;
+        tokenCell.appendChild(tokenBadge);
+
+        const countCell = document.createElement("td");
+        countCell.textContent = item.count;
+
+        row.appendChild(idCell);
+        row.appendChild(tokenCell);
+        row.appendChild(countCell);
+        vocabTableBody.appendChild(row);
+      });
+    }
+
+    // WHAT THIS DOES: Reads the training sentences, calculates all word frequencies, and initializes the slider
+    function buildVocabularyFromText() {
+      const rawText = document.getElementById("trainingSentences").value;
+
+      let text = rawText.toLowerCase();
+      text = text.replace(/([.,!?'’])/g, " $1 ");
+
+      const words = text.trim().split(/\s+/).filter(word => word.length > 0);
+
+      learnedWordCounts = {};
+      words.forEach(word => {
+        learnedWordCounts[word] = (learnedWordCounts[word] || 0) + 1;
+      });
+
+      allLearnedWords = Object.keys(learnedWordCounts).sort((a, b) => {
+        return learnedWordCounts[b] - learnedWordCounts[a] || a.localeCompare(b);
+      });
+
+      const totalWords = allLearnedWords.length;
+
+      const slider = document.getElementById("vocabSlider");
+      slider.min = "1";
+      slider.max = totalWords.toString();
+      slider.value = totalWords.toString();
+
+      updateVocabularyForTopN(totalWords);
+      document.getElementById("vocabContainer").style.display = "block";
+    }
+
+    document.getElementById("buildVocabBtn").addEventListener("click", buildVocabularyFromText);
+
+    // WHAT THIS DOES: Listens to the slider moving live, updates vocabulary, and re-tokenizes sentence in real time
+    document.getElementById("vocabSlider").addEventListener("input", function() {
+      const n = parseInt(this.value, 10);
+      updateVocabularyForTopN(n);
+
+      if (hasTokenizedSentence) {
+        tokenizeSentence();
+      }
+    });
+
+    // WHAT THIS DOES: Generates a deterministic chakra-infused color for a token based on its ID or text
+    function getChipColor(id, tokenText) {
+      let seed = id;
+      if (id === 0) {
+        let hash = 0;
+        for (let i = 0; i < tokenText.length; i++) {
+          hash = tokenText.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        seed = Math.abs(hash);
+      }
+      const hue = (seed * 53 + 24) % 360;
+      return {
+        bg: `hsla(${hue}, 80%, 15%, 0.95)`,
+        border: `hsla(${hue}, 95%, 55%, 0.75)`,
+        text: `hsla(${hue}, 95%, 90%, 1)`
+      };
+    }
+
+    // WHAT THIS DOES: Core reusable tokenization function that breaks any text into tokens using current vocabulary
+    function tokenizeText(rawText) {
+      const originalCharCount = rawText.length;
+      let processedText = rawText.toLowerCase().replace(/([.,!?'’])/g, " $1 ");
+      const rawWords = processedText.trim().split(/\s+/).filter(w => w.length > 0);
+
+      const finalTokens = [];
+      let hasUnknownPieces = false;
+
+      rawWords.forEach(word => {
+        if (vocabulary[word]) {
+          finalTokens.push({
+            token: word,
+            id: vocabulary[word].id
+          });
+        } else {
+          hasUnknownPieces = true;
+          for (let i = 0; i < word.length; i++) {
+            const piece = (i === 0) ? word[i] : `##${word[i]}`;
+            const pieceId = vocabulary[piece] ? vocabulary[piece].id : (vocabulary[word[i]] ? vocabulary[word[i]].id : 0);
+            finalTokens.push({
+              token: piece,
+              id: pieceId
+            });
+          }
+        }
+      });
+
+      return {
+        tokens: finalTokens,
+        charCount: originalCharCount,
+        tokenCount: finalTokens.length,
+        hasUnknownPieces: hasUnknownPieces
+      };
+    }
+
+    // WHAT THIS DOES: Renders token chips into any container element on the page with staggered pop-up animation
+    function renderChipsToContainer(containerElement, tokens) {
+      containerElement.innerHTML = "";
+      tokens.forEach((item, index) => {
+        const chip = document.createElement("div");
+        chip.className = "token-chip";
+        // Stagger animation delay slightly so chips pop in sequentially like Apple UI
+        chip.style.animationDelay = `${index * 0.03}s`;
+
+        const colors = getChipColor(item.id, item.token);
+        chip.style.backgroundColor = colors.bg;
+        chip.style.borderColor = colors.border;
+        chip.style.color = colors.text;
+
+        const wordSpan = document.createElement("span");
+        wordSpan.className = "chip-word";
+        wordSpan.textContent = item.token;
+
+        const idSpan = document.createElement("span");
+        idSpan.className = "chip-id";
+        idSpan.textContent = item.id;
+
+        chip.appendChild(wordSpan);
+        chip.appendChild(idSpan);
+        containerElement.appendChild(chip);
+      });
+    }
+
+    // WHAT THIS DOES: Performs tokenization on the Part 1 sentence box and displays chips and stats
+    function tokenizeSentence() {
+      hasTokenizedSentence = true;
+
+      const inputSentence = document.getElementById("encodeSentence").value;
+      const result = tokenizeText(inputSentence);
+
+      const charsPerToken = result.tokenCount > 0 ? (result.charCount / result.tokenCount).toFixed(1) : "0";
+
+      document.getElementById("statCharCount").textContent = result.charCount;
+      document.getElementById("statTokenCount").textContent = result.tokenCount;
+      document.getElementById("statCharsPerToken").textContent = charsPerToken;
+
+      const subwordNote = document.getElementById("subwordNote");
+      subwordNote.style.display = result.hasUnknownPieces ? "block" : "none";
+
+      renderChipsToContainer(document.getElementById("chipsArea"), result.tokens);
+      document.getElementById("tokenizeContainer").style.display = "block";
+    }
+
+    // WHAT THIS DOES: Handles clicking the "Tokenize" button
+    document.getElementById("tokenizeBtn").addEventListener("click", function() {
+      if (allLearnedWords.length === 0) {
+        buildVocabularyFromText();
+      }
+      tokenizeSentence();
+    });
+
+    // WHAT THIS DOES: Computes a 64-number spelling vector for a sentence using 3-letter groups (character trigrams)
+    function computeSpellingVector(sentence) {
+      const text = sentence.toLowerCase();
+      const vec = new Array(64).fill(0);
+
+      if (text.length < 3) {
+        for (let i = 0; i < text.length; i++) {
+          const bucket = text.charCodeAt(i) % 64;
+          vec[bucket] += 1;
+        }
+      } else {
+        for (let i = 0; i <= text.length - 3; i++) {
+          const trigram = text.substring(i, i + 3);
+
+          let hash = 0;
+          for (let j = 0; j < 3; j++) {
+            hash = (hash * 31 + trigram.charCodeAt(j)) >>> 0;
+          }
+
+          const bucket = hash % 64;
+          vec[bucket] += 1;
+        }
+      }
+
+      const sumSquares = vec.reduce((sum, val) => sum + val * val, 0);
+      const length = Math.sqrt(sumSquares);
+
+      if (length > 0) {
+        for (let i = 0; i < 64; i++) {
+          vec[i] = vec[i] / length;
+        }
+      }
+
+      return vec;
+    }
+
+    // WHAT THIS DOES: Calculates the cosine similarity between two unit-scaled number vectors
+    function computeCosineSimilarity(vecA, vecB) {
+      let dotProduct = 0;
+      const len = Math.min(vecA.length, vecB.length);
+      for (let i = 0; i < len; i++) {
+        dotProduct += vecA[i] * vecB[i];
+      }
+      return dotProduct;
+    }
+
+    // WHAT THIS DOES: Reduces any list of numbers down to 3 coordinates (x, y, z) with plain JavaScript
+    function reduceTo3D(vec) {
+      let x = 0;
+      let y = 0;
+      let z = 0;
+
+      for (let i = 0; i < vec.length; i++) {
+        x += vec[i] * Math.sin(i * 1.15 + 0.2);
+        y += vec[i] * Math.cos(i * 1.65 + 0.4);
+        z += vec[i] * Math.sin(i * 2.25 + 0.8);
+      }
+
+      return { x, y, z };
+    }
+
+    // WHAT THIS DOES: Creates a short display label from a sentence
+    function getShortLabel(sentence) {
+      const words = sentence.trim().split(/\s+/);
+      if (words.length <= 3) {
+        return sentence;
+      }
+      return words.slice(0, 3).join(" ") + "...";
+    }
+
+    // WHAT THIS DOES: Finds the 5 most similar sentence pairs using cosine similarity on full vectors
+    function renderClosestPairs(sentences, fullVectors) {
+      const pairs = [];
+
+      for (let i = 0; i < sentences.length; i++) {
+        for (let j = i + 1; j < sentences.length; j++) {
+          const sim = computeCosineSimilarity(fullVectors[i], fullVectors[j]);
+          pairs.push({
+            sent1: sentences[i],
+            sent2: sentences[j],
+            score: sim
+          });
+        }
+      }
+
+      pairs.sort((a, b) => b.score - a.score);
+      const top5 = pairs.slice(0, 5);
+
+      const tbody = document.getElementById("pairsTableBody");
+      tbody.innerHTML = "";
+
+      top5.forEach((p, idx) => {
+        const row = document.createElement("tr");
+
+        const rankCell = document.createElement("td");
+        const rankBadge = document.createElement("span");
+        rankBadge.style.cssText = "font-weight: 700; font-size: 11.5px; padding: 3px 8px; border-radius: 6px; display: inline-block; background: " + (idx === 0 ? "linear-gradient(135deg, #ff7a00, #ea580c); color: white; box-shadow: 0 0 10px rgba(255,107,0,0.5);" : "rgba(255, 122, 0, 0.15); color: #fdba74; border: 1px solid rgba(255, 122, 0, 0.3);");
+        rankBadge.textContent = idx === 0 ? `🍥 #${idx + 1}` : `#${idx + 1}`;
+        rankCell.appendChild(rankBadge);
+
+        const s1Cell = document.createElement("td");
+        s1Cell.textContent = p.sent1;
+
+        const s2Cell = document.createElement("td");
+        s2Cell.textContent = p.sent2;
+
+        const scoreCell = document.createElement("td");
+        const scoreBadge = document.createElement("span");
+        scoreBadge.className = "similarity-score";
+        scoreBadge.textContent = p.score.toFixed(3);
+        scoreCell.appendChild(scoreBadge);
+
+        row.appendChild(rankCell);
+        row.appendChild(s1Cell);
+        row.appendChild(s2Cell);
+        row.appendChild(scoreCell);
+        tbody.appendChild(row);
+      });
+
+      document.getElementById("pairsSection").style.display = "block";
+    }
+
+    // WHAT THIS DOES: Displays informative or warning messages in the status banner
+    function showStatus(message, type) {
+      const banner = document.getElementById("statusBanner");
+      banner.textContent = message;
+      banner.className = "status-banner animated-popup " + (type === "warning" ? "status-warning" : "status-info");
+      banner.style.display = "block";
+    }
+
+    // WHAT THIS DOES: Loads Transformers.js from jsDelivr and computes meaning-based embeddings
+    async function computeMeaningEmbeddings(sentences) {
+      const { pipeline, env } = await import("https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2");
+
+      env.allowLocalModels = false;
+
+      if (!meaningPipeline) {
+        showStatus("Downloading Xenova/all-MiniLM-L6-v2 model from CDN...", "info");
+
+        meaningPipeline = await pipeline("feature-extraction", "Xenova/all-MiniLM-L6-v2", {
+          progress_callback: (data) => {
+            if (data.status === "progress" && data.progress !== undefined) {
+              const pct = Math.round(data.progress);
+              showStatus(`Downloading model (${data.file || "weights"}): ${pct}%`, "info");
+            } else if (data.status === "ready") {
+              showStatus("Model loaded successfully. Generating embeddings...", "info");
+            }
+          }
+        });
+      }
+
+      showStatus("Computing meaning-based embeddings...", "info");
+
+      const output = await meaningPipeline(sentences, { pooling: "mean", normalize: true });
+      const vectors = [];
+
+      for (let i = 0; i < sentences.length; i++) {
+        const slice = output[i].data;
+        vectors.push(Array.from(slice));
+      }
+
+      const banner = document.getElementById("statusBanner");
+      banner.style.display = "none";
+
+      return vectors;
+    }
+
+    // WHAT THIS DOES: Reusable function to render the 3D Plotly chart, highlighting an optional custom point as a bigger orange dot
+    function drawPlotlyChart(sentences, fullVectors, customIndex = -1) {
+      const chartArea = document.getElementById("chartArea");
+      chartArea.innerHTML = "";
+      chartArea.style.border = "1px solid #e5e5ea";
+
+      const xCoords = [];
+      const yCoords = [];
+      const zCoords = [];
+      const textLabels = [];
+      const hoverTexts = [];
+      const markerColors = [];
+      const markerSizes = [];
+
+      for (let i = 0; i < sentences.length; i++) {
+        const point3D = reduceTo3D(fullVectors[i]);
+        xCoords.push(point3D.x);
+        yCoords.push(point3D.y);
+        zCoords.push(point3D.z);
+        textLabels.push(getShortLabel(sentences[i]));
+        hoverTexts.push(sentences[i]);
+
+        if (i === customIndex) {
+          markerColors.push("#ff3d00"); // Nine-Tails Crimson Flame
+          markerSizes.push(13);         // Prominent fiery orb
+        } else {
+          markerColors.push("#06b6d4"); // Rasengan Cyan Chakra
+          markerSizes.push(8);          // Standard chakra node
+        }
+      }
+
+      const trace = {
+        x: xCoords,
+        y: yCoords,
+        z: zCoords,
+        mode: "markers+text",
+        type: "scatter3d",
+        text: textLabels,
+        textposition: "top center",
+        textfont: {
+          family: "-apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif",
+          size: 11.5,
+          color: "#fed7aa"
+        },
+        hovertext: hoverTexts,
+        hoverinfo: "text",
+        marker: {
+          size: markerSizes,
+          color: markerColors,
+          opacity: 0.95,
+          line: { color: "#ffffff", width: 1.5 }
+        }
+      };
+
+      const layout = {
+        height: 520,
+        margin: { l: 0, r: 0, b: 0, t: 0 },
+        paper_bgcolor: "rgba(0, 0, 0, 0)",
+        scene: {
+          camera: { eye: { x: 1.5, y: 1.5, z: 1.3 } },
+          xaxis: { 
+            title: "X", 
+            backgroundcolor: "rgba(10, 15, 26, 0.85)", 
+            gridcolor: "rgba(255, 122, 0, 0.2)", 
+            showbackground: true, 
+            zerolinecolor: "#ff7a00",
+            tickfont: { color: "#94a3b8" },
+            titlefont: { color: "#fdba74" }
+          },
+          yaxis: { 
+            title: "Y", 
+            backgroundcolor: "rgba(10, 15, 26, 0.85)", 
+            gridcolor: "rgba(255, 122, 0, 0.2)", 
+            showbackground: true, 
+            zerolinecolor: "#ff7a00",
+            tickfont: { color: "#94a3b8" },
+            titlefont: { color: "#fdba74" }
+          },
+          zaxis: { 
+            title: "Z", 
+            backgroundcolor: "rgba(10, 15, 26, 0.85)", 
+            gridcolor: "rgba(255, 122, 0, 0.2)", 
+            showbackground: true, 
+            zerolinecolor: "#ff7a00",
+            tickfont: { color: "#94a3b8" },
+            titlefont: { color: "#fdba74" }
+          }
+        }
+      };
+
+      const config = {
+        responsive: true,
+        displayModeBar: true,
+        displaylogo: false
+      };
+
+      Plotly.newPlot("chartArea", [trace], layout, config);
+    }
+
+    // WHAT THIS DOES: Handles clicking "Embed and plot", calculating embeddings (spelling or meaning), and updating the 3D plot and closest pairs table
+    document.getElementById("embedPlotBtn").addEventListener("click", async function() {
+      const rawText = document.getElementById("embeddingSentences").value;
+      const sentences = rawText.split("\n").map(s => s.trim()).filter(s => s.length > 0);
+      const chartArea = document.getElementById("chartArea");
+      const embedPlotBtn = document.getElementById("embedPlotBtn");
+
+      if (sentences.length < 4) {
+        chartArea.innerHTML = '<div class="chart-warning animated-popup">Please enter at least 4 sentences (one per line) to plot in 3D.</div>';
+        chartArea.style.border = "1px dashed #d2d2d7";
+        document.getElementById("pairsSection").style.display = "none";
+        return;
+      }
+
+      const selectedMode = document.querySelector('input[name="embeddingMode"]:checked').value;
+      let fullVectors = [];
+
+      embedPlotBtn.disabled = true;
+
+      if (selectedMode === "meaning") {
+        try {
+          fullVectors = await computeMeaningEmbeddings(sentences);
+        } catch (err) {
+          console.warn("Meaning mode failed:", err);
+          showStatus("Meaning mode needs the page served over http - using spelling-based instead", "warning");
+          fullVectors = sentences.map(s => computeSpellingVector(s));
+        }
+      } else {
+        document.getElementById("statusBanner").style.display = "none";
+        fullVectors = sentences.map(s => computeSpellingVector(s));
+      }
+
+      embedPlotBtn.disabled = false;
+
+      currentPlottedSentences = sentences;
+      currentPlottedVectors = fullVectors;
+
+      drawPlotlyChart(sentences, fullVectors);
+      renderClosestPairs(sentences, fullVectors);
+    });
+
+    // WHAT THIS DOES: Stage 7 - Tokenizes custom word/sentence, embeds it, adds to plot as orange dot, and lists 3 closest sentences
+    document.getElementById("customTokenizeBtn").addEventListener("click", async function() {
+      let customInput = document.getElementById("customSentenceInput").value.trim();
+      if (!customInput) {
+        customInput = "puppy";
+        document.getElementById("customSentenceInput").value = "puppy";
+      }
+
+      if (allLearnedWords.length === 0) {
+        buildVocabularyFromText();
+      }
+
+      const tokenResult = tokenizeText(customInput);
+      renderChipsToContainer(document.getElementById("customChipsArea"), tokenResult.tokens);
+
+      if (currentPlottedSentences.length === 0) {
+        const rawText = document.getElementById("embeddingSentences").value;
+        currentPlottedSentences = rawText.split("\n").map(s => s.trim()).filter(s => s.length > 0);
+        currentPlottedVectors = currentPlottedSentences.map(s => computeSpellingVector(s));
+      }
+
+      const selectedMode = document.querySelector('input[name="embeddingMode"]:checked').value;
+      let customVector = [];
+
+      if (selectedMode === "meaning" && meaningPipeline) {
+        try {
+          const meaningOutputs = await computeMeaningEmbeddings([customInput]);
+          customVector = meaningOutputs[0];
+        } catch (err) {
+          customVector = computeSpellingVector(customInput);
+        }
+      } else {
+        customVector = computeSpellingVector(customInput);
+      }
+
+      const embeddingTextarea = document.getElementById("embeddingSentences");
+      if (!currentPlottedSentences.includes(customInput)) {
+        embeddingTextarea.value += "\n" + customInput;
+        currentPlottedSentences.push(customInput);
+        currentPlottedVectors.push(customVector);
+      }
+
+      const customIndex = currentPlottedSentences.indexOf(customInput);
+
+      const first8Numbers = customVector.slice(0, 8).map(n => n.toFixed(3));
+      document.getElementById("customVectorPreview").textContent = `[ ${first8Numbers.join(", ")} ... ]`;
+
+      drawPlotlyChart(currentPlottedSentences, currentPlottedVectors, customIndex);
+      renderClosestPairs(currentPlottedSentences, currentPlottedVectors);
+
+      const similarityList = [];
+      for (let i = 0; i < currentPlottedSentences.length; i++) {
+        if (i !== customIndex) {
+          const sim = computeCosineSimilarity(customVector, currentPlottedVectors[i]);
+          similarityList.push({
+            sentence: currentPlottedSentences[i],
+            score: sim
+          });
+        }
+      }
+
+      similarityList.sort((a, b) => b.score - a.score);
+      const top3 = similarityList.slice(0, 3);
+
+      const closestListElement = document.getElementById("customClosestList");
+      closestListElement.innerHTML = "";
+
+      top3.forEach((item, idx) => {
+        const li = document.createElement("li");
+        li.className = "closest-list-item";
+
+        const textSpan = document.createElement("span");
+        textSpan.innerHTML = `<span style="font-weight: 800; color: #ff7a00; margin-right: 8px; font-size: 13px;">#${idx + 1}</span> ${item.sentence}`;
+
+        const scoreSpan = document.createElement("span");
+        scoreSpan.className = "similarity-score";
+        scoreSpan.textContent = item.score.toFixed(3);
+
+        li.appendChild(textSpan);
+        li.appendChild(scoreSpan);
+        closestListElement.appendChild(li);
+      });
+
+      document.getElementById("customResultArea").style.display = "block";
+    });
+  </script>
+</body>
+</html>
